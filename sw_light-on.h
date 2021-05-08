@@ -16,7 +16,7 @@ class GpioPi {
   // ↑今後監視するポートが増えたら配列にする
   //std::array<std::function, kTactSwPin> notify_func_list;
 
-  static constexpr auto kSamplingTime = 200*1000; // チャタキャンセルのサンプリング数(us)
+  static constexpr auto kSamplingTime = 300*1000; // チャタキャンセルのサンプリング数(us)
 
 };
 

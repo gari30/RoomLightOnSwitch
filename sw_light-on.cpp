@@ -2,6 +2,7 @@
 #include <functional>
 #include <stdio.h>
 #include <stdlib.h>
+#include <thread>
 
 #include "pigpiod_if2.h"
 
@@ -11,6 +12,8 @@
 
 void GpioEventNotify(int, unsigned int, unsigned int, unsigned int);
 void TactSwPushEvent(uint8_t level);
+
+static bool event_stop_flag = 0;
 
 GpioPi::GpioPi() {
   pi_ = pigpio_start(NULL, NULL);
@@ -24,7 +27,7 @@ GpioPi::~GpioPi() {
 void GpioPi::TackSwitchPinInit() {
   set_mode(pi_, TACTSW_PIN, PI_INPUT); // GPIOをinputに設定
   set_pull_up_down(pi_, TACTSW_PIN, PI_PUD_UP); // GPIOをプルアップに設定
-  set_noise_filter(pi_, TACTSW_PIN, kSamplingTime, 1000/*kSamplingTime*/); // チャタキャンセル
+  set_noise_filter(pi_, TACTSW_PIN, kSamplingTime, kSamplingTime); // チャタキャンセル
 }
 
 void GpioPi::SetCallback() {
@@ -42,7 +45,10 @@ void GpioPi::SetCallback() {
 void GpioEventNotify(int pi, unsigned int gpio, unsigned int level, unsigned int tick) {
   switch(gpio) {
     case TACTSW_PIN:
-      TactSwPushEvent(static_cast<uint8_t>(level));
+      if (!event_stop_flag) {
+        TactSwPushEvent(static_cast<uint8_t>(level));
+        event_stop_flag = 1;
+      }
       break;
     
     default:
@@ -60,7 +66,13 @@ int main(void) {
 
   gpiopi.SetCallback();
 
-  while(1){};
+  while(1) {
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    if (event_stop_flag) {
+      std::this_thread::sleep_for(std::chrono::seconds(20));
+      event_stop_flag = 0;
+    }
+  };
 
   return 0;
 }
