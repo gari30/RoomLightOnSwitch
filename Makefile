@@ -1,5 +1,5 @@
 CC     = gcc
-CFLAGS = -Wall -pthread -std=c++11
+CFLAGS = -Wall -pthread -std=c++11 -Wcomment
 LIBS   = -lstdc++ -lpigpiod_if2 -lrt
 SRC    = sw_light-on.cpp
 OBJ    = $(SRC:%.cpp=%.o)
