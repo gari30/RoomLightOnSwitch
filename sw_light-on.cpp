@@ -58,7 +58,7 @@ void GpioEventNotify(int pi, unsigned int gpio, unsigned int level, unsigned int
 
 void TactSwPushEvent(uint8_t level) {
 //  printf("TactSwitch push. level:%d\n", level);
-  system("/home/garipi/homebot/bin/pi-send.sh 'room2lighton'");
+  system("/home/garipi/homebot/bin/pi-send.sh 'pcroomlighton'");
 }
 
 int main(void) {
