@@ -11,9 +11,9 @@
 #define TACTSW_PIN 7
 
 void GpioEventNotify(int, unsigned int, unsigned int, unsigned int);
-void TactSwPushEvent(uint8_t level);
+void TactSwPushEvent(void);
 
-static bool event_stop_flag = 0;
+static uint8_t event_count_pin7 = 0; // TACTSW_PIN 7が押されたカウント
 
 GpioPi::GpioPi() {
   pi_ = pigpio_start(NULL, NULL);
@@ -27,7 +27,7 @@ GpioPi::~GpioPi() {
 void GpioPi::TackSwitchPinInit() {
   set_mode(pi_, TACTSW_PIN, PI_INPUT); // GPIOをinputに設定
   set_pull_up_down(pi_, TACTSW_PIN, PI_PUD_UP); // GPIOをプルアップに設定
-  set_noise_filter(pi_, TACTSW_PIN, kSamplingTime, kSamplingTime); // チャタキャンセル
+  set_noise_filter(pi_, TACTSW_PIN, kSamplingTime, 1); // チャタキャンセル
 }
 
 void GpioPi::SetCallback() {
@@ -45,10 +45,8 @@ void GpioPi::SetCallback() {
 void GpioEventNotify(int pi, unsigned int gpio, unsigned int level, unsigned int tick) {
   switch(gpio) {
     case TACTSW_PIN:
-      if (!event_stop_flag) {
-        TactSwPushEvent(static_cast<uint8_t>(level));
-        event_stop_flag = 1;
-      }
+      ++event_count_pin7;
+//      printf("[%u]count increment: %d\n",level ,event_count_pin7);
       break;
     
     default:
@@ -56,8 +54,7 @@ void GpioEventNotify(int pi, unsigned int gpio, unsigned int level, unsigned int
   }
 }
 
-void TactSwPushEvent(uint8_t level) {
-//  printf("TactSwitch push. level:%d\n", level);
+void TactSwPushEvent(void) {
   system("/home/garipi/homebot/bin/pi-send.sh 'pcroomlighton'");
 }
 
@@ -67,10 +64,13 @@ int main(void) {
   gpiopi.SetCallback();
 
   while(1) {
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-    if (event_stop_flag) {
-      std::this_thread::sleep_for(std::chrono::seconds(20));
-      event_stop_flag = 0;
+    if (event_count_pin7 != 0) {
+      TactSwPushEvent();
+      --event_count_pin7;
+//      printf("decrement count: %d\n", event_count_pin7);
+    }
+    else {
+      std::this_thread::sleep_for(std::chrono::seconds(5));
     }
   };
 
